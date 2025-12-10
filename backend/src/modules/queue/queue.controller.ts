@@ -50,4 +50,3 @@ export class QueueController {
     return this.queueService.remove(id);
   }
 }
-
