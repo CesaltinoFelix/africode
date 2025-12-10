@@ -1,0 +1,88 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          String   @default("user")
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  establishments Establishment[]
+  tickets        Ticket[]
+
+  @@map("users")
+}
+
+model Category {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  establishments  Establishment[]
+
+  @@map("categories")
+}
+
+model Establishment {
+  id            String   @id @default(cuid())
+  name          String
+  address       String
+  province      String
+  userId        String
+  categoryId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  queues        Queue[]
+
+  @@map("establishments")
+}
+
+model Queue {
+  id              String   @id @default(cuid())
+  name            String
+  prefix          String
+  status          String   @default("active")
+  currentNum      Int      @default(0)
+  startAt         DateTime?
+  endAt           DateTime?
+  establishId     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  establishment   Establishment @relation(fields: [establishId], references: [id], onDelete: Cascade)
+  tickets         Ticket[]
+
+  @@map("queues")
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  number    String   @unique
+  position  Int
+  status    String   @default("pending")
+  userId    String
+  queueId   String
+  calledAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queue     Queue    @relation(fields: [queueId], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
