@@ -14,18 +14,22 @@ export class QueueRepository {
   }
 
   async findAll(): Promise<Queue[]> {
-    return this.prisma.queue.findMany();
+    return this.prisma.queue.findMany({
+      include: { tickets: true },
+    });
   }
 
   async findOne(id: string): Promise<Queue | null> {
     return this.prisma.queue.findUnique({
       where: { id },
+      include: { tickets: true },
     });
   }
 
   async findByEstablishment(establishId: string): Promise<Queue[]> {
     return this.prisma.queue.findMany({
       where: { establishId },
+      include: { tickets: true },
     });
   }
 

@@ -1,13 +1,42 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateTicketDto, UpdateTicketDto } from './dto/create-ticket.dto';
 import { TicketRepository } from './repository/ticket.repository';
 import { Ticket } from './entities/ticket.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class TicketService {
-  constructor(private ticketRepository: TicketRepository) {}
+  constructor(
+    private ticketRepository: TicketRepository,
+    private prisma: PrismaService,
+  ) {}
 
   async create(createTicketDto: CreateTicketDto): Promise<Ticket> {
+    // Validar se o usuário existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: createTicketDto.userId },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Validar se a fila existe
+    const queue = await this.prisma.queue.findUnique({
+      where: { id: createTicketDto.queueId },
+    });
+    if (!queue) {
+      throw new BadRequestException('Queue not found');
+    }
+
+    // Validar se a fila está ativa
+    if (queue.status !== 'active') {
+      throw new BadRequestException('Queue is not active');
+    }
+
     return this.ticketRepository.create(createTicketDto);
   }
 
@@ -24,10 +53,26 @@ export class TicketService {
   }
 
   async findByQueue(queueId: string): Promise<Ticket[]> {
+    // Validar se a fila existe
+    const queue = await this.prisma.queue.findUnique({
+      where: { id: queueId },
+    });
+    if (!queue) {
+      throw new NotFoundException('Queue not found');
+    }
+
     return this.ticketRepository.findByQueue(queueId);
   }
 
   async findByUser(userId: string): Promise<Ticket[]> {
+    // Validar se o usuário existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     return this.ticketRepository.findByUser(userId);
   }
 

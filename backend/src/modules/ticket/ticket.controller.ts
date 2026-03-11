@@ -53,4 +53,3 @@ export class TicketController {
     return this.ticketService.remove(id);
   }
 }
-

@@ -1,11 +1,20 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { UserRepository } from './repository/user.repository';
 import { User } from './entities/user.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    private userRepository: UserRepository,
+    private prisma: PrismaService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const existingUser = await this.userRepository.findByEmail(
@@ -44,7 +53,25 @@ export class UserService {
 
   async remove(id: string): Promise<User> {
     await this.findOne(id);
+
+    // Verificar se existem estabelecimentos vinculados
+    const establishments = await this.prisma.establishment.findMany({
+      where: { userId: id },
+    });
+    if (establishments.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete user with active establishments',
+      );
+    }
+
+    // Verificar se existem tickets vinculados
+    const tickets = await this.prisma.ticket.findMany({
+      where: { userId: id },
+    });
+    if (tickets.length > 0) {
+      throw new BadRequestException('Cannot delete user with active tickets');
+    }
+
     return this.userRepository.delete(id);
   }
 }
-

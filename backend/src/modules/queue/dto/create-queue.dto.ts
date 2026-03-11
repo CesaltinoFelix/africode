@@ -35,3 +35,9 @@ export class UpdateQueueDto {
   @IsOptional()
   currentNum?: number;
 }
+
+export class findByStatusDto {
+  @IsString()
+  @IsNotEmpty()
+  status: string;
+}
